@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import com.myco.pricing.domain.CompetitorPrice;
 import com.myco.pricing.domain.PricingStrategyInput;
@@ -49,7 +50,15 @@ public class DefaultPricingStrategy implements PricingStrategy {
 			//System.out.println("Product " + thisProduct.getProductCode());
 			//System.out.println("Found " + averageCounter + " averaging " + averagePrice);
 			
-			// Remove promotional prices (<50%) and assumed data errors (>50%). Could have been done with Streams
+			// Remove promotional prices (<50%) and assumed data errors (>50%)
+
+			// With Java 8 Streams (needs an 'effectively final' average price)
+			double finalAveragePrice = averagePrice;
+			Map<BigDecimal, Integer> fixedProductPrices = productPrices.entrySet().stream()
+					.filter(map -> map.getKey().doubleValue() >= (finalAveragePrice * .5) && map.getKey().doubleValue() <= (finalAveragePrice * 1.5))
+					.collect(Collectors.toMap(newMap -> newMap.getKey(), newMap -> newMap.getValue()));
+
+/* Without Streams
 			Map<BigDecimal, Integer> fixedProductPrices = new TreeMap<BigDecimal, Integer>();
 			Set<BigDecimal> keys = productPrices.keySet();
 			for (BigDecimal key : keys) {
@@ -60,8 +69,9 @@ public class DefaultPricingStrategy implements PricingStrategy {
 					fixedProductPrices.put(key, productPrices.get(key));
 				}
 			}
+*/
 			productPrices = fixedProductPrices;
-			keys = productPrices.keySet();
+			Set<BigDecimal> keys = productPrices.keySet();
 
 			//System.out.println("Product " + thisProduct.getProductCode());
 			//for (BigDecimal key : keys) {
